@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>All You Want – Store Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --paper: #eef2f5; --surface: #ffffff; --ink: #12233a; --ink-soft: #5a6a7e; --line: #d5dde5;
+    --tag: #ffcb2e; --tag-ink: #12233a; --ok: #1f7a4d; --warn: #c8371f; --focus: #2b6cdf;
+    --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0e1a2b; --surface: #16263b; --ink: #eaf0f7; --ink-soft: #9fb0c4; --line: #2a3d57;
+      --ok: #4cc48a; --warn: #ff7a62; --focus: #7fb0ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1a2b; --surface: #16263b; --ink: #eaf0f7; --ink-soft: #9fb0c4; --line: #2a3d57;
+    --ok: #4cc48a; --warn: #ff7a62; --focus: #7fb0ff;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .price-tag {
+    background: var(--tag); color: var(--tag-ink); font-family: var(--display); font-weight: 800;
+    font-size: clamp(26px, 5vw, 38px); line-height: 1; letter-spacing: -0.02em;
+    padding: 12px 20px 12px 34px; position: relative;
+    clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 50%);
+  }
+  .price-tag::before { content: ""; position: absolute; left: 12px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--paper); }
+  .brand small { display: block; color: var(--ink-soft); font-size: 14px; }
+  .head-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .btn { border: 1.5px solid var(--ink); background: var(--surface); border-radius: 8px; padding: 8px 14px; font-weight: 600; cursor: pointer; min-height: 42px; }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  .btn.primary:hover { background: var(--tag); color: var(--tag-ink); border-color: var(--tag-ink); }
+  .btn.ghost { border-color: var(--line); }
+  .btn.small { min-height: 34px; padding: 3px 10px; font-size: 14px; }
+  .btn.danger:hover { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  input, select { width: 100%; background: var(--paper); border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
+  input:focus, select:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
+  input[aria-invalid="true"] { border-color: var(--warn); }
+
+  .stats { display: flex; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+  .stat { flex: 1; padding: 14px 18px; border-right: 1px solid var(--line); min-width: 0; }
+  .stat:last-child { border-right: 0; }
+  .stat b { display: block; font-family: var(--display); font-size: clamp(20px, 4vw, 30px); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+  .stat span { color: var(--ink-soft); font-size: 14px; }
+  .stat.low b { color: var(--warn); }
+
+  .warn-banner { background: var(--warn); color: #fff; padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; display: none; font-size: 14px; }
+  .warn-banner.show { display: block; }
+
+  /* Add heading */
+  .new-head { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+  .new-head h2 { font-family: var(--display); font-size: 20px; margin: 0 0 2px; }
+  .note { color: var(--ink-soft); font-size: 14px; margin: 0 0 12px; }
+  .new-row { display: flex; gap: 8px; }
+  .new-row .btn { flex-shrink: 0; }
+  .suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .suggest button { border: 1px dashed var(--ink-soft); background: transparent; border-radius: 99px; padding: 2px 12px; font-size: 14px; cursor: pointer; min-height: 30px; }
+  .suggest button:hover { background: var(--tag); color: var(--tag-ink); border-color: var(--tag-ink); border-style: solid; }
+
+  .search { margin-bottom: 16px; }
+
+  /* Category sections */
+  .cat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 18px; overflow: hidden; }
+  .cat-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--tag); color: var(--tag-ink); flex-wrap: wrap; }
+  .cat-toggle { background: transparent; border: 0; cursor: pointer; font-size: 18px; width: 32px; height: 32px; border-radius: 6px; color: var(--tag-ink); }
+  .cat-toggle:hover { background: rgba(18,35,58,.15); }
+  .cat-title { font-family: var(--display); font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; flex: 1; min-width: 120px; overflow-wrap: anywhere; }
+  .cat-sum { font-size: 14px; font-weight: 600; }
+  .cat-tools { display: flex; gap: 6px; }
+  .cat-head .btn { background: rgba(255,255,255,.55); border-color: var(--tag-ink); color: var(--tag-ink); }
+  .cat-head .btn:hover { background: var(--tag-ink); color: var(--tag); }
+  .cat-head .rename-in { max-width: 260px; background: #fff; color: #12233a; }
+  .cat-body { padding: 6px 14px 14px; }
+  .cat.closed .cat-body { display: none; }
+
+  ul.items { list-style: none; margin: 0; padding: 0; }
+  .item { display: grid; grid-template-columns: minmax(0, 1fr) 118px 150px 100px auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .item .nm { font-weight: 600; overflow-wrap: anywhere; }
+  .item .nm .chip { margin-left: 6px; }
+  .chip { display: inline-block; border: 1px solid var(--warn); color: var(--warn); border-radius: 99px; padding: 0 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .unitp { color: var(--ink-soft); font-size: 14px; }
+  .qty { display: flex; align-items: center; gap: 4px; }
+  .qty button { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--paper); cursor: pointer; font-size: 18px; line-height: 1; }
+  .qty button:hover { border-color: var(--ink); }
+  .qty output { min-width: 70px; text-align: center; font-weight: 600; font-size: 15px; }
+  .tot { font-family: var(--display); font-weight: 700; text-align: right; }
+  .acts { display: flex; gap: 6px; justify-content: flex-end; }
+  .item.low { box-shadow: inset 4px 0 0 var(--warn); padding-left: 10px; }
+
+  .item.editing { grid-template-columns: repeat(6, 1fr); background: color-mix(in srgb, var(--tag) 15%, transparent); padding: 10px; border-radius: 8px; }
+  .item.editing .c-name { grid-column: 1 / -1; }
+  .item.editing .acts { grid-column: 1 / -1; justify-content: flex-start; }
+  .item.editing label, .add-row label { display: block; font-size: 12px; color: var(--ink-soft); font-weight: 600; margin-bottom: 2px; }
+  .item.editing .c-qty, .item.editing .c-price { grid-column: span 2; }
+  .item.editing .c-unit, .item.editing .c-low { grid-column: span 1; }
+  .item.editing .c-unit { grid-column: span 2; }
+  .item.editing .c-low { grid-column: span 2; }
+
+  .add-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 100px 110px auto; gap: 8px; align-items: end; margin-top: 12px; padding-top: 12px; border-top: 2px dashed var(--line); }
+  .empty-cat { color: var(--ink-soft); font-size: 14px; padding: 10px 0 0; }
+
+  .empty { text-align: center; padding: 40px 16px; border: 2px dashed var(--line); border-radius: 12px; color: var(--ink-soft); }
+  .empty b { display: block; color: var(--ink); font-family: var(--display); font-size: 20px; margin-bottom: 4px; }
+
+  @media (max-width: 700px) {
+    .item { grid-template-columns: 1fr auto; }
+    .item .unitp { grid-column: 1; grid-row: 2; }
+    .item .qty { grid-column: 1; grid-row: 3; }
+    .item .tot { grid-column: 2; grid-row: 1; }
+    .item .acts { grid-column: 2; grid-row: 2 / span 2; flex-direction: column; align-self: end; }
+    .add-row { grid-template-columns: 1fr 1fr; }
+    .add-row .c-name { grid-column: 1 / -1; }
+    .add-row .btn { grid-column: 1 / -1; }
+    .item.editing { grid-template-columns: repeat(2, 1fr); }
+    .item.editing .c-qty, .item.editing .c-price, .item.editing .c-unit, .item.editing .c-low { grid-column: span 1; }
+  }
+
+  #toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 14px; border-radius: 10px; display: none; align-items: center; gap: 12px; z-index: 10; max-width: calc(100% - 24px); }
+  #toast.show { display: flex; }
+  #toast button { background: transparent; border: 0; color: var(--tag); font-weight: 700; cursor: pointer; text-decoration: underline; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="price-tag">All You Want</div>
+      <div><strong>Store manager</strong><small>Headings first, items underneath</small></div>
+    </div>
+    <div class="head-tools">
+      <select id="currency" style="width:auto" aria-label="Currency">
+        <option value="₹">₹ INR</option><option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option>
+      </select>
+      <button class="btn ghost" id="exportBtn" style="display:none">Export CSV</button>
+    </div>
+  </header>
+
+  <div class="warn-banner" id="storageWarn">This browser is blocking saved data, so changes will be lost when you close the page.</div>
+
+  <section class="stats" aria-label="Store summary">
+    <div class="stat"><b id="sItems">0</b><span>Items</span></div>
+    <div class="stat"><b id="sValue">0</b><span>Stock value</span></div>
+    <div class="stat low"><b id="sLow">0</b><span>Low or out of stock</span></div>
+  </section>
+
+  <section class="new-head" aria-labelledby="nhTitle">
+    <h2 id="nhTitle">Add a heading</h2>
+    <p class="note">Create a heading such as Stationery, then add its items right below it. What you type is saved as you go.</p>
+    <div class="new-row">
+      <input id="newHead" autocomplete="off" placeholder="e.g. Stationery" aria-label="New heading name">
+      <button class="btn primary" id="addHead">Add heading</button>
+    </div>
+    <div class="suggest" id="suggest"></div>
+  </section>
+
+  <div class="search"><input id="search" type="search" placeholder="Search all items" aria-label="Search all items"></div>
+
+  <div id="app"></div>
+</div>
+
+<div id="toast" role="status"><span id="toastMsg"></span><button id="toastUndo">Undo</button></div>
+
+<script>
+(function () {
+  var K = { items: "ayw:items:v1", cats: "ayw:cats:v2", drafts: "ayw:drafts:v2", edit: "ayw:edit:v2", closed: "ayw:closed:v2", cur: "ayw:currency:v1", q: "ayw:search:v2" };
+  var SUGGEST = ["Stationery", "Groceries", "Snacks", "Drinks", "Household", "Personal care", "Electronics"];
+  var UNITS = ["pcs", "kg", "g", "litre", "ml", "pack", "box", "dozen"];
+  var memory = {}, storageOK = true;
+
+  function load(key, fallback) {
+    try { var raw = window.localStorage.getItem(key); return raw === null ? fallback : JSON.parse(raw); }
+    catch (e) { storageOK = false; return key in memory ? memory[key] : fallback; }
+  }
+  function save(key, val) {
+    memory[key] = val;
+    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { storageOK = false; warn(); }
+  }
+  function remove(key) { delete memory[key]; try { window.localStorage.removeItem(key); } catch (e) {} }
+  function warn() { if (!storageOK) $("storageWarn").classList.add("show"); }
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function uid() { return "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  var items = load(K.items, []); if (!Array.isArray(items)) items = [];
+  var cats = load(K.cats, null);
+  if (!Array.isArray(cats)) {
+    // migrate from the first version: build headings from the items' categories
+    items.sort(function (a, b) { return (a.added || 0) - (b.added || 0); });
+    cats = [];
+    items.forEach(function (i) { if (!i.cat) i.cat = "Other"; if (cats.indexOf(i.cat) === -1) cats.push(i.cat); });
+    save(K.cats, cats); save(K.items, items);
+  }
+  var drafts = load(K.drafts, {}); if (!drafts || typeof drafts !== "object") drafts = {};
+  var edit = load(K.edit, null);
+  var closed = load(K.closed, {});
+  var currency = load(K.cur, "₹");
+  var q = load(K.q, "");
+  var renaming = null, lastDeleted = null, toastTimer = null;
+
+  function money(n) { return currency + (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+  function num(n) { return Number(n).toLocaleString(undefined, { maximumFractionDigits: 3 }); }
+  function unitOpts(sel) { return UNITS.map(function (u) { return "<option" + (u === sel ? " selected" : "") + ">" + u + "</option>"; }).join(""); }
+  function hasCat(name) { return cats.some(function (c) { return c.toLowerCase() === name.toLowerCase(); }); }
+
+  /* ---------- Toast ---------- */
+  function toast(msg, undo) {
+    $("toastMsg").textContent = msg;
+    $("toastUndo").style.display = undo ? "" : "none";
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $("toast").classList.remove("show"); lastDeleted = null; }, undo ? 7000 : 2800);
+  }
+  $("toastUndo").addEventListener("click", function () {
+    var d = lastDeleted; if (!d) return;
+    if (d.type === "item") {
+      if (!hasCat(d.item.cat)) cats.push(d.item.cat);
+      items.splice(Math.min(d.idx, items.length), 0, d.item);
+    } else {
+      cats.splice(Math.min(d.idx, cats.length), 0, d.name);
+      items = items.concat(d.items);
+    }
+    lastDeleted = null; persistAll(); $("toast").classList.remove("show"); render();
+  });
+  function persistAll() { save(K.items, items); save(K.cats, cats); }
+
+  /* ---------- Headings ---------- */
+  function addHeading(name) {
+    name = (name || "").trim();
+    if (!name) { $("newHead").setAttribute("aria-invalid", "true"); $("newHead").focus(); toast("Type a heading name first."); return; }
+    if (hasCat(name)) { toast("“" + name + "” already exists."); return; }
+    cats.push(name); save(K.cats, cats);
+    delete drafts.__new; save(K.drafts, drafts);
+    $("newHead").value = ""; $("newHead").removeAttribute("aria-invalid");
+    render();
+    var el = document.querySelector('[data-add-name="' + cssEsc(name) + '"]');
+    if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  }
+  function cssEsc(s) { return s.replace(/["\\]/g, "\\$&"); }
+  $("addHead").addEventListener("click", function () { addHeading($("newHead").value); });
+  $("newHead").addEventListener("keydown", function (e) { if (e.key === "Enter") addHeading(this.value); });
+  $("newHead").addEventListener("input", function () {
+    this.removeAttribute("aria-invalid");
+    if (this.value) drafts.__new = this.value; else delete drafts.__new;
+    save(K.drafts, drafts);
+  });
+  $("suggest").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) addHeading(b.textContent); });
+
+  $("search").addEventListener("input", function () { q = this.value; save(K.q, q); renderCats(); });
+  $("currency").addEventListener("change", function () { currency = this.value; save(K.cur, currency); render(); });
+
+  /* ---------- Delegated events on the sections ---------- */
+  var app = $("app");
+
+  // Save what is typed, without re-rendering (so focus is never lost)
+  function onType(e) {
+    var t = e.target, d = t.getAttribute("data-d");
+    if (!d) return;
+    if (d === "add") {
+      var name = t.getAttribute("data-cat");
+      drafts[name] = drafts[name] || {};
+      drafts[name][t.getAttribute("data-f")] = t.value;
+      t.removeAttribute("aria-invalid");
+      save(K.drafts, drafts);
+    } else if (d === "edit" && edit) {
+      edit.f[t.getAttribute("data-f")] = t.value;
+      t.removeAttribute("aria-invalid");
+      save(K.edit, edit);
+    }
+  }
+  app.addEventListener("input", onType);
+  app.addEventListener("change", onType);
+
+  app.addEventListener("keydown", function (e) {
+    var t = e.target, d = t.getAttribute("data-d");
+    if (e.key === "Enter") {
+      if (d === "add") { addItem(t.getAttribute("data-cat")); e.preventDefault(); }
+      else if (d === "edit") { saveEdit(); e.preventDefault(); }
+      else if (d === "rename") { doRename(t.getAttribute("data-cat"), t.value); e.preventDefault(); }
+    } else if (e.key === "Escape") {
+      if (d === "edit") { cancelEdit(); }
+      else if (d === "rename") { renaming = null; renderCats(); }
+    }
+  });
+
+  app.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    var act = b.getAttribute("data-act"), cat = b.getAttribute("data-cat"), id = b.getAttribute("data-id");
+    if (act === "toggle") { closed[cat] = !closed[cat]; save(K.closed, closed); renderCats(); }
+    else if (act === "add") addItem(cat);
+    else if (act === "rename") { renaming = cat; renderCats(); var r = app.querySelector(".rename-in"); if (r) { r.focus(); r.select(); } }
+    else if (act === "rename-save") doRename(cat, app.querySelector(".rename-in").value);
+    else if (act === "rename-cancel") { renaming = null; renderCats(); }
+    else if (act === "delcat") deleteCat(cat);
+    else if (act === "inc" || act === "dec") stepQty(id, act === "inc" ? 1 : -1);
+    else if (act === "edit") startEdit(id);
+    else if (act === "edit-save") saveEdit();
+    else if (act === "edit-cancel") cancelEdit();
+    else if (act === "del") deleteItem(id);
+  });
+
+  function find(id) { return items.filter(function (x) { return x.id === id; })[0]; }
+
+  function addItem(cat) {
+    var d = drafts[cat] || {};
+    var name = (d.name || "").trim();
+    var nameEl = app.querySelector('[data-add-name="' + cssEsc(cat) + '"]');
+    if (!name) { if (nameEl) { nameEl.setAttribute("aria-invalid", "true"); nameEl.focus(); } toast("Enter the item name."); return; }
+    var price = d.price === undefined || d.price === "" ? 0 : Number(d.price);
+    var qty = d.qty === undefined || d.qty === "" ? 0 : Number(d.qty);
+    if (isNaN(price) || price < 0 || isNaN(qty) || qty < 0) { toast("Price and quantity must be 0 or more."); return; }
+    items.push({ id: uid(), cat: cat, name: name, unit: d.unit || "pcs", price: price, qty: qty, low: 5, notes: "", added: Date.now(), updated: Date.now() });
+    drafts[cat] = { unit: d.unit || "pcs" }; // keep the chosen unit, clear the rest
+    save(K.items, items); save(K.drafts, drafts);
+    render();
+    var el = app.querySelector('[data-add-name="' + cssEsc(cat) + '"]'); if (el) el.focus();
+    toast("Added " + name + " under " + cat);
+  }
+
+  function stepQty(id, dir) {
+    var it = find(id); if (!it) return;
+    var step = it.unit === "kg" || it.unit === "litre" ? 0.5 : 1;
+    it.qty = Math.max(0, Math.round((it.qty + dir * step) * 1000) / 1000);
+    it.updated = Date.now(); save(K.items, items); render();
+  }
+
+  function startEdit(id) {
+    var it = find(id); if (!it) return;
+    edit = { id: id, f: { name: it.name, unit: it.unit, price: it.price, qty: it.qty, low: it.low } };
+    save(K.edit, edit); renderCats();
+    var el = app.querySelector('[data-d="edit"][data-f="name"]'); if (el) el.focus();
+  }
+  function cancelEdit() { edit = null; remove(K.edit); renderCats(); }
+  function saveEdit() {
+    if (!edit) return; var it = find(edit.id); if (!it) return cancelEdit();
+    var f = edit.f, name = String(f.name).trim();
+    var price = Number(f.price === "" ? 0 : f.price), qty = Number(f.qty === "" ? 0 : f.qty), low = Number(f.low === "" ? 0 : f.low);
+    if (!name) { var n = app.querySelector('[data-d="edit"][data-f="name"]'); if (n) { n.setAttribute("aria-invalid", "true"); n.focus(); } toast("Enter the item name."); return; }
+    if ([price, qty, low].some(function (v) { return isNaN(v) || v < 0; })) { toast("Price, quantity and warning level must be 0 or more."); return; }
+    it.name = name; it.unit = f.unit; it.price = price; it.qty = qty; it.low = low; it.updated = Date.now();
+    edit = null; remove(K.edit); save(K.items, items); render(); toast("Saved changes to " + name);
+  }
+
+  function deleteItem(id) {
+    var it = find(id); if (!it) return;
+    var idx = items.indexOf(it); items.splice(idx, 1);
+    if (edit && edit.id === id) { edit = null; remove(K.edit); }
+    lastDeleted = { type: "item", item: it, idx: idx };
+    save(K.items, items); render(); toast("Deleted " + it.name, true);
+  }
+  function deleteCat(name) {
+    var idx = cats.indexOf(name); if (idx < 0) return;
+    var gone = items.filter(function (i) { return i.cat === name; });
+    items = items.filter(function (i) { return i.cat !== name; });
+    cats.splice(idx, 1); delete drafts[name]; delete closed[name];
+    if (edit && gone.some(function (i) { return i.id === edit.id; })) { edit = null; remove(K.edit); }
+    lastDeleted = { type: "cat", name: name, idx: idx, items: gone };
+    persistAll(); save(K.drafts, drafts); save(K.closed, closed); render();
+    toast("Deleted heading " + name + (gone.length ? " and " + gone.length + " item" + (gone.length > 1 ? "s" : "") : ""), true);
+  }
+  function doRename(old, val) {
+    val = (val || "").trim();
+    if (!val) { toast("Type a heading name."); return; }
+    if (val.toLowerCase() !== old.toLowerCase() && hasCat(val)) { toast("“" + val + "” already exists."); return; }
+    cats[cats.indexOf(old)] = val;
+    items.forEach(function (i) { if (i.cat === old) i.cat = val; });
+    if (drafts[old]) { drafts[val] = drafts[old]; delete drafts[old]; }
+    if (closed[old]) { closed[val] = closed[old]; delete closed[old]; }
+    renaming = null; persistAll(); save(K.drafts, drafts); save(K.closed, closed); render();
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    var total = 0, low = 0;
+    items.forEach(function (i) { total += i.price * i.qty; if (i.qty <= i.low) low++; });
+    $("sItems").textContent = items.length;
+    $("sValue").textContent = money(total);
+    $("sLow").textContent = low;
+    $("exportBtn").disabled = !items.length;
+    var free = SUGGEST.filter(function (s) { return !hasCat(s); });
+    $("suggest").innerHTML = free.length ? free.map(function (s) { return '<button type="button">' + esc(s) + "</button>"; }).join("") : "";
+    renderCats();
+  }
+
+  function itemRow(i) {
+    if (edit && edit.id === i.id) {
+      var f = edit.f;
+      return '<li class="item editing">' +
+        '<div class="c-name"><label>Item name</label><input data-d="edit" data-f="name" value="' + esc(f.name) + '"></div>' +
+        '<div class="c-qty"><label>Quantity</label><input data-d="edit" data-f="qty" type="number" inputmode="decimal" min="0" step="any" value="' + esc(f.qty) + '"></div>' +
+        '<div class="c-unit"><label>Unit</label><select data-d="edit" data-f="unit">' + unitOpts(f.unit) + '</select></div>' +
+        '<div class="c-price"><label>Price per unit</label><input data-d="edit" data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(f.price) + '"></div>' +
+        '<div class="c-low"><label>Warn at or below</label><input data-d="edit" data-f="low" type="number" inputmode="decimal" min="0" step="any" value="' + esc(f.low) + '"></div>' +
+        '<div class="acts"><button class="btn primary small" data-act="edit-save">Save changes</button><button class="btn small ghost" data-act="edit-cancel">Cancel</button></div></li>';
+    }
+    var chip = i.qty === 0 ? '<span class="chip">Out of stock</span>' : (i.qty <= i.low ? '<span class="chip">Low stock</span>' : "");
+    return '<li class="item' + (i.qty <= i.low ? " low" : "") + '">' +
+      '<div class="nm">' + esc(i.name) + chip + '</div>' +
+      '<div class="unitp">' + money(i.price) + ' / ' + esc(i.unit) + '</div>' +
+      '<div class="qty"><button data-act="dec" data-id="' + i.id + '" aria-label="Decrease quantity of ' + esc(i.name) + '">−</button><output>' + num(i.qty) + ' ' + esc(i.unit) + '</output><button data-act="inc" data-id="' + i.id + '" aria-label="Increase quantity of ' + esc(i.name) + '">+</button></div>' +
+      '<div class="tot">' + money(i.price * i.qty) + '</div>' +
+      '<div class="acts"><button class="btn small" data-act="edit" data-id="' + i.id + '">Edit</button><button class="btn small danger" data-act="del" data-id="' + i.id + '">Delete</button></div></li>';
+  }
+
+  function renderCats() {
+    if (!cats.length) {
+      app.innerHTML = '<div class="empty"><b>No headings yet</b>Add your first heading above, for example Stationery, then add items under it.</div>';
+      return;
+    }
+    var term = q.trim().toLowerCase(), shown = 0;
+    var html = cats.map(function (c) {
+      var all = items.filter(function (i) { return i.cat === c; });
+      var list = all;
+      if (term && c.toLowerCase().indexOf(term) === -1) list = all.filter(function (i) { return i.name.toLowerCase().indexOf(term) !== -1; });
+      if (term && !list.length) return "";
+      shown++;
+      var sum = 0; all.forEach(function (i) { sum += i.price * i.qty; });
+      var isClosed = !!closed[c] && !term;
+      var ea = esc(c), d = drafts[c] || {};
+      var title = renaming === c
+        ? '<input class="rename-in" data-d="rename" data-cat="' + ea + '" value="' + ea + '" aria-label="Heading name"><button class="btn small" data-act="rename-save" data-cat="' + ea + '">Save</button><button class="btn small" data-act="rename-cancel">Cancel</button>'
+        : '<h2 class="cat-title">' + ea + '</h2><span class="cat-sum">' + all.length + ' item' + (all.length === 1 ? "" : "s") + ' · ' + money(sum) + '</span><span class="cat-tools"><button class="btn small" data-act="rename" data-cat="' + ea + '">Rename</button><button class="btn small" data-act="delcat" data-cat="' + ea + '">Delete</button></span>';
+      return '<section class="cat' + (isClosed ? " closed" : "") + '">' +
+        '<div class="cat-head"><button class="cat-toggle" data-act="toggle" data-cat="' + ea + '" aria-expanded="' + (!isClosed) + '" aria-label="' + (isClosed ? "Expand " : "Collapse ") + ea + '">' + (isClosed ? "▸" : "▾") + '</button>' + title + '</div>' +
+        '<div class="cat-body">' +
+        (list.length ? '<ul class="items">' + list.map(itemRow).join("") + '</ul>' : '<p class="empty-cat">No items yet. Add the first one below.</p>') +
+        '<div class="add-row">' +
+        '<div class="c-name"><label>New item under ' + ea + '</label><input data-d="add" data-f="name" data-cat="' + ea + '" data-add-name="' + ea + '" autocomplete="off" placeholder="Item name" value="' + esc(d.name || "") + '"></div>' +
+        '<div><label>Quantity</label><input data-d="add" data-f="qty" data-cat="' + ea + '" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="' + esc(d.qty || "") + '"></div>' +
+        '<div><label>Unit</label><select data-d="add" data-f="unit" data-cat="' + ea + '">' + unitOpts(d.unit || "pcs") + '</select></div>' +
+        '<div><label>Price per unit</label><input data-d="add" data-f="price" data-cat="' + ea + '" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" value="' + esc(d.price || "") + '"></div>' +
+        '<button class="btn primary" data-act="add" data-cat="' + ea + '">Add item</button>' +
+        '</div></div></section>';
+    }).join("");
+    app.innerHTML = html || '<div class="empty"><b>No items match</b>Try a different search.</div>';
+  }
+
+  /* ---------- Export ---------- */
+  var downloads = null;
+  function cell(v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  $("exportBtn").addEventListener("click", function () {
+    if (!downloads || !items.length) return;
+    var rows = [["Heading", "Item", "Unit", "Price", "Quantity", "Stock value"]];
+    cats.forEach(function (c) { items.filter(function (i) { return i.cat === c; }).forEach(function (i) { rows.push([c, i.name, i.unit, i.price, i.qty, i.price * i.qty]); }); });
+    downloads.save({ filename: "all-you-want-items.csv", data: rows.map(function (r) { return r.map(cell).join(","); }).join("\n") })
+      .then(function () { toast("Exported " + items.length + " items"); }).catch(function () {});
+  });
+  try {
+    if (window.claude && window.claude.use) {
+      window.claude.use("downloads").then(function (d) { if (d) { downloads = d; $("exportBtn").style.display = ""; } }).catch(function () {});
+    }
+  } catch (e) {}
+
+  /* ---------- Init ---------- */
+  $("currency").value = currency;
+  $("search").value = q;
+  $("newHead").value = drafts.__new || "";
+  // drop stale drafts for headings that no longer exist
+  Object.keys(drafts).forEach(function (k) { if (k !== "__new" && cats.indexOf(k) === -1) delete drafts[k]; });
+  if (edit && !find(edit.id)) { edit = null; remove(K.edit); }
+  var restored = !!edit || !!drafts.__new || Object.keys(drafts).some(function (k) {
+    if (k === "__new") return false; var d = drafts[k]; return d.name || d.qty || d.price;
+  });
+  warn(); render();
+  if (restored) toast("Picked up where you left off.");
+})();
+</script>
+</body>
+</html>
